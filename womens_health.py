@@ -33,7 +33,11 @@ def validate_file():
     # sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health "
     #        "WHERE addr2 != '' LIMIT 1;")
 
-    sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health LIMIT 500;")
+    # sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health LIMIT 500;")
+
+    sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health "
+           "where upper(addr2) LIKE 'STE%' OR upper(addr2) LIKE 'SUITE%' "
+           "OR upper(addr2) LIKE 'APT%' OR upper(addr2) LIKE 'APARTMENT%';")
 
     cursor.execute(sql)
 
@@ -41,7 +45,7 @@ def validate_file():
         # print(rec)
         # print(url.format(userid=usps_userid, **rec))
 
-        if int(rec['rowid']) % 10 == 0:
+        if int(rec['rowid']) % 100 == 0:
             db.commit()
             print("Record {0}".format(rec['rowid']))
 
@@ -164,7 +168,8 @@ def export_file():
     db.row_factory = dict_factory
     cursor = db.cursor()
 
-    sql = ("SELECT * FROM health;")
+    # sql = ("SELECT * FROM health;")
+    sql = ("SELECT * FROM health where cass_addr1 IS NOT NULL;")
     cursor.execute(sql)
 
     dt = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
@@ -181,6 +186,21 @@ def export_file():
 
 
 def main():
+    # TODO add updated field
+    # TODO only import records to SQLite with the correct record len
+    # TODO program PO Box swap
+    # TODO replace '#' in apartment or suite fields
+    # TODO program Apt, Ste combine
+    """
+        select *
+        from health
+        where upper(addr2) LIKE 'STE%'
+            OR upper(addr2) LIKE 'SUITE%'
+            OR upper(addr2) LIKE 'APT%'
+            OR upper(addr2) LIKE 'APARTMENT%'
+        ;
+    """
+
     import_file()
     validate_file()
     export_file()
