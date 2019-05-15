@@ -2,6 +2,7 @@
 .idea/
 run_eddm_cmd.py
 *.txt
+*.sublime-project
 
 __pycache__/
 *.py[cod]
