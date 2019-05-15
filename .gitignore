@@ -3,7 +3,7 @@
 run_eddm_cmd.py
 *.txt
 *.sublime-project
-*.sublilme-workspace
+*.sublime-workspace
 *.db
 
 __pycache__/
