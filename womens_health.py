@@ -33,11 +33,11 @@ def validate_file():
     # sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health "
     #        "WHERE addr2 != '' LIMIT 1;")
 
-    # sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health LIMIT 500;")
+    sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health;")
 
-    sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health "
-           "where upper(addr2) LIKE 'STE%' OR upper(addr2) LIKE 'SUITE%' "
-           "OR upper(addr2) LIKE 'APT%' OR upper(addr2) LIKE 'APARTMENT%';")
+    # sql = ("SELECT rowid, addr1, addr2, city, state, zip5, zip4 FROM health "
+    #        "where upper(addr2) LIKE 'STE%' OR upper(addr2) LIKE 'SUITE%' "
+    #        "OR upper(addr2) LIKE 'APT%' OR upper(addr2) LIKE 'APARTMENT%';")
 
     cursor.execute(sql)
 
@@ -102,6 +102,9 @@ def validate_file():
                                                                                   rec['rowid'])
                 cursor.execute(sql)
 
+            sql = "UPDATE health SET updated = 1 WHERE rowid = '{0}';".format(rec['rowid'])
+            cursor.execute(sql)
+
     db.commit()
     db.close()
     print("Validate complete")
@@ -125,7 +128,7 @@ def import_file():
                    "flag varchar(20), cass_addr1 varchar(50), "
                    "cass_addr2 varchar(50), cass_city varchar(35), "
                    "cass_state varchar(2), cass_Zip9 varchar(15), "
-                   "dp varchar(2), crrt varchar(4), dpv varchar(1));")
+                   "dp varchar(2), crrt varchar(4), dpv varchar(1), updated int(1) default 0);")
 
     with open(fle[0], 'r') as f:
         # throw out the first 10 lines
@@ -134,28 +137,28 @@ def import_file():
         for n, line in enumerate(f):
             line = line.strip()
 
-            firstnam = line[0:19].strip()
-            mi = line[19:20].strip()
-            lstnam = line[25:49].strip()
-            addr1 = line[49:83].strip()
-            addr2 = line[83:116].strip()
-            city = line[116:140].strip()
-            state = line[140:142].strip()
-            zip5 = line[148:153].strip()
-            zip4 = line[157:161].strip()
-            group_cat = line[165:185].strip()
-            product = line[185:196].strip()
-            flag = line[196:198].strip()
+            if len(line) == 198:
+                firstnam = line[0:19].strip()
+                mi = line[19:20].strip()
+                lstnam = line[25:49].strip()
+                addr1 = line[49:83].strip().replace('#', '')
+                addr2 = line[83:116].strip().replace('#', '')
+                city = line[116:140].strip()
+                state = line[140:142].strip()
+                zip5 = line[148:153].strip()
+                zip4 = line[157:161].strip()
+                group_cat = line[165:185].strip()
+                product = line[185:196].strip()
+                flag = line[196:198].strip()
 
-            vals = (firstnam, mi, lstnam, addr1, addr2, city, state, zip5, zip4, group_cat, product, flag)
+                vals = (firstnam, mi, lstnam, addr1, addr2, city, state, zip5, zip4, group_cat, product, flag)
 
+                sql = ("INSERT INTO health (firstnam, mI, lstnam, "
+                       "addr1, addr2, city, state, zip5, zip4, "
+                       "group_cat, product, flag) VALUES (?, "
+                       "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
 
-            sql = ("INSERT INTO health (firstnam, mI, lstnam, "
-                   "addr1, addr2, city, state, zip5, zip4, "
-                   "group_cat, product, flag) VALUES (?, "
-                   "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
-
-            cursor.execute(sql, vals)
+                cursor.execute(sql, vals)
 
     db.commit()
     db.close()
@@ -168,8 +171,8 @@ def export_file():
     db.row_factory = dict_factory
     cursor = db.cursor()
 
-    # sql = ("SELECT * FROM health;")
-    sql = ("SELECT * FROM health where cass_addr1 IS NOT NULL;")
+    sql = ("SELECT * FROM health;")
+    # sql = ("SELECT * FROM health where cass_addr1 IS NOT NULL;")
     cursor.execute(sql)
 
     dt = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
@@ -186,11 +189,6 @@ def export_file():
 
 
 def main():
-    # TODO add updated field
-    # TODO only import records to SQLite with the correct record len
-    # TODO program PO Box swap
-    # TODO replace '#' in apartment or suite fields
-    # TODO program Apt, Ste combine
     """
         select *
         from health
@@ -200,7 +198,6 @@ def main():
             OR upper(addr2) LIKE 'APARTMENT%'
         ;
     """
-
     import_file()
     validate_file()
     export_file()
